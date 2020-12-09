@@ -2,7 +2,7 @@ let serverEUrl = "http://localhost/speedtest/e.php";
 let serverGUrl = "http://localhost/speedtest/g.php";
 let status = "";
 
-function startTest(){
+async function startTest(){
   if(status == "" || status == "stop"){
     status = "start";
     setText("button", "Stop Test");
@@ -14,22 +14,17 @@ function startTest(){
   }
 
   setText("status", "checking ping...");
-  ping((ms) => {
-    setText("ping", ms);
-    if(status == "stoped"){stopTest();return;}
-    setText("status", "checking download...");
-    download((mb) => {
-      setText("down", mb);
-      if(status == "stoped"){stopTest();return;}
-      setText("status", "checking upload...");
-      upload((mb) => {
-        setText("up", mb);
-        if(status == "stoped"){stopTest();return;}
-        setText("status", "done.");
-        setText("button", "Start Test");
-      });
-    });
-  });
+  await ping((ms) => {setText("ping", ms)});
+  if(status == "stoped"){stopTest();return;}
+  setText("status", "checking download...");
+  await download((mb) => {setText("down", mb)});
+  if(status == "stoped"){stopTest();return;}
+  setText("status", "checking upload...");
+  await upload((mb) => {setText("up", mb)});
+  if(status == "stoped"){stopTest();return;}
+  status = "stop";
+  setText("status", "done.");
+  setText("button", "Start Test");
 }
 
 function stopTest(){
@@ -41,7 +36,7 @@ function setText(elm, text){
   document.getElementById(elm).innerText = text;
 }
 
-function ping(callback) {
+async function ping(callback) {
   var startTime = 0;
   var request = new XMLHttpRequest();
   request.open("HEAD", serverEUrl + "?_=" + Math.random(), true);
@@ -59,7 +54,7 @@ function ping(callback) {
   }
 }
 
-function download(callback){
+async function download(callback){
   var startTime = 0;
   var request = new XMLHttpRequest();
   request.open("GET", serverGUrl, true);
@@ -80,16 +75,16 @@ function download(callback){
   }
 }
 
-function junkData(length){
+async function junkData(length){
   var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()`[]\\{}|:"<>?,./;\'', result = '';
   for (var i = 0; i < length; i++) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
 }
 
-function upload(callback){
+async function upload(callback){
   var startTime = 0;
   var junkLength = 2500000;
-  var junk = junkData(junkLength); //=2.5 Mb
+  var junk = await junkData(junkLength); //=2.5 Mb
   var request = new XMLHttpRequest();
   request.open("POST", serverEUrl + "?_=" + Math.random(), true);
   request.setRequestHeader("Content-Type", "application/octet-stream");
