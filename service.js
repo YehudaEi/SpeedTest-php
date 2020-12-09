@@ -1,5 +1,5 @@
-let serverEUrl = "http://localhost/speedtest/e.php";
-let serverGUrl = "http://localhost/speedtest/g.php";
+let serverEUrl = "http://localhost/speedtest/";
+let serverGUrl = "http://localhost/speedtest/blank.file";
 let status = "";
 
 async function startTest(){
