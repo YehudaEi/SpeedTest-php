@@ -1,3 +1,0 @@
-php_value       display_errors  1
-php_flag        log_errors      on
-php_value       error_log       /var/www/speedtest/php.error.log
