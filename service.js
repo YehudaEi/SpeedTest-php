@@ -50,9 +50,9 @@ async function ping() {
     var request = new XMLHttpRequest();
     request.open("HEAD", serverEUrl + "?_=" + Math.random(), true);
     request.onreadystatechange = function() {
-      if (request.readyState == 4) {
+      if (request.readyState === 4) {
         var endTime = new Date().getTime();
-        resolve(endTime - startTime);
+        resolve((endTime - startTime) + " ms");
       }
     };
     try {
@@ -70,12 +70,12 @@ async function download(){
     var request = new XMLHttpRequest();
     request.open("GET", serverGUrl, true);
     request.onreadystatechange = function() {
-      if (request.readyState == 4 && request.status === 200) {
+      if (request.readyState === 4 && request.status === 200) {
         var endTime = new Date().getTime();
         var reqLength = request.responseText.length * 8;
         var sumTime = (endTime - startTime) / 1000;
         var speed = (((reqLength / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
-        resolve(speed + " Mbps");
+        resolve(speed + " Mbps (" + sumTime + " s)");
       }
     };
     try {
@@ -88,7 +88,7 @@ async function download(){
 }
 
 function junkData(length){
-  var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()`[]\\{}|:"<>?,./;\'', result = '';
+  var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', result = '';
   for (var i = 0; i < length; i++) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
 }
@@ -98,16 +98,15 @@ async function upload(){
     var startTime = 0;
     var junkLength = 2500000; //=2.5 Mb
     var junk = junkData(junkLength);
-    console.log(junk);
     var request = new XMLHttpRequest();
     request.open("POST", serverEUrl + "?_=" + Math.random(), true);
     request.setRequestHeader("Content-Type", "application/octet-stream");
     request.onreadystatechange = function() {
-      if (request.readyState == 4 && request.status === 200) {
+      if (request.readyState === 4 && request.status === 200) {
         var endTime = new Date().getTime();
         var sumTime = (endTime - startTime) / 1000;
-        var speed = (((junkLength / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
-        resolve(speed + " Mbps");
+        var speed = ((((junkLength * 8 /* byte (not bit) */) / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
+        resolve(speed + " Mbps (" + sumTime + " s)");
       }
     };
     try {
