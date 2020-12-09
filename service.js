@@ -2,6 +2,9 @@ let serverEUrl = "http://localhost/speedtest/";
 let serverGUrl = "http://localhost/speedtest/blank.file";
 let status = "";
 
+// TODO - add onprogress event
+// TODO - check 5 connection together
+
 async function startTest(){
   if(status == "" || status == "stop"){
     status = "start";
