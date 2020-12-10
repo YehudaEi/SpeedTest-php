@@ -2,7 +2,6 @@ let serverEUrl = "http://localhost/speedtest/";
 let serverGUrl = "http://localhost/speedtest/blank.file";
 let status = "";
 
-// TODO - add onprogress event
 // TODO - check 5 connection together
 
 async function startTest(){
@@ -49,8 +48,7 @@ function setText(elm, text){
 
 async function ping() {
   return new Promise(resolve => {
-    var startTime = 0;
-    var request = new XMLHttpRequest();
+    var startTime, request = new XMLHttpRequest();
     request.open("HEAD", serverEUrl + "?_=" + Math.random(), true);
     request.onreadystatechange = function() {
       if (request.readyState === 4) {
@@ -69,18 +67,23 @@ async function ping() {
 
 async function download(){
   return new Promise(resolve => {
-    var startTime = 0;
-    var request = new XMLHttpRequest();
-    request.open("GET", serverGUrl, true);
+    var startTime, request = new XMLHttpRequest();
+    request.open("GET", serverGUrl + "?_=" + Math.random(), true);
     request.onreadystatechange = function() {
       if (request.readyState === 4 && request.status === 200) {
         var endTime = new Date().getTime();
-        var reqLength = request.responseText.length * 8;
+        var reqLength = request.response.length * 8;
         var sumTime = (endTime - startTime) / 1000;
         var speed = (((reqLength / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
         resolve(speed + " Mbps (" + sumTime + " s)");
       }
     };
+    request.onprogress = function(){
+      var reqLength = request.response.length * 8;
+      var sumTime = (new Date().getTime() - startTime) / 1000;
+      var speed = (((reqLength / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
+      setText("down", speed + " Mbps (" + sumTime + " s)");
+    }
     try {
       startTime = new Date().getTime();
       request.send(null);
@@ -98,8 +101,7 @@ function junkData(length){
 
 async function upload(){
   return new Promise(resolve => {
-    var startTime = 0;
-    var junkLength = 2500000; //=2.5 Mb
+    var startTime, junkLength = 2500000; //=2.5 Mb
     var junk = junkData(junkLength);
     var request = new XMLHttpRequest();
     request.open("POST", serverEUrl + "?_=" + Math.random(), true);
@@ -112,6 +114,11 @@ async function upload(){
         resolve(speed + " Mbps (" + sumTime + " s)");
       }
     };
+    request.onprogress = function(){
+      var sumTime = (new Date().getTime() - startTime) / 1000;
+      var speed = ((((junkLength * 8 /* byte (not bit) */) / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
+      setText("up", speed + " Mbps (" + sumTime + " s)");
+    }
     try {
       startTime = new Date().getTime();
       request.send(junk);
