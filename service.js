@@ -8,6 +8,10 @@ async function startTest(){
   if(status == "" || status == "stop"){
     status = "start";
     setText("button", "Stop Test");
+    setText("ping", "");
+    setText("down", "");
+    setText("up", "");
+    setText("status", "");
   }
   else if(status == "start"){
     status = "stop";
@@ -28,8 +32,8 @@ async function startTest(){
   if(status == "stop"){stopTest();return;}
 
   setText("status", "checking upload...");
-  var downMB = await upload();
-  setText("up", downMB);
+  var upMB = await upload();
+  setText("up", upMB);
 
   status = "";
   setText("status", "done.");
@@ -48,7 +52,8 @@ function setText(elm, text){
 
 async function ping() {
   return new Promise(resolve => {
-    var startTime, request = new XMLHttpRequest();
+    var startTime = 0;
+    var request = new XMLHttpRequest();
     request.open("HEAD", serverEUrl + "?_=" + Math.random(), true);
     request.onreadystatechange = function() {
       if (request.readyState === 4) {
@@ -67,23 +72,27 @@ async function ping() {
 
 async function download(){
   return new Promise(resolve => {
-    var startTime, request = new XMLHttpRequest();
+    var startTime = 0;
+    var request = new XMLHttpRequest();
     request.open("GET", serverGUrl + "?_=" + Math.random(), true);
     request.onreadystatechange = function() {
       if (request.readyState === 4 && request.status === 200) {
         var endTime = new Date().getTime();
-        var reqLength = request.response.length * 8;
+        var reqLength = request.responseText.length * 8;
         var sumTime = (endTime - startTime) / 1000;
         var speed = (((reqLength / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
         resolve(speed + " Mbps (" + sumTime + " s)");
       }
     };
-    request.onprogress = function(){
-      var reqLength = request.response.length * 8;
-      var sumTime = (new Date().getTime() - startTime) / 1000;
+    request.onprogress = function() {
+      if(status == "stop"){request.abort();resolve("Stopped.");}
+      
+      var endTime = new Date().getTime();
+      var reqLength = request.responseText.length * 8;
+      var sumTime = (endTime - startTime) / 1000;
       var speed = (((reqLength / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
       setText("down", speed + " Mbps (" + sumTime + " s)");
-    }
+    };
     try {
       startTime = new Date().getTime();
       request.send(null);
@@ -101,8 +110,9 @@ function junkData(length){
 
 async function upload(){
   return new Promise(resolve => {
-    var startTime, junkLength = 2500000; //=2.5 Mb
-    var junk = junkData(junkLength);
+    var startTime = 0;
+    var junkLength = 5000000; //=~5 Mb
+    var junk = JSON.stringify({data: junkData(junkLength)});
     var request = new XMLHttpRequest();
     request.open("POST", serverEUrl + "?_=" + Math.random(), true);
     request.setRequestHeader("Content-Type", "application/octet-stream");
@@ -114,11 +124,6 @@ async function upload(){
         resolve(speed + " Mbps (" + sumTime + " s)");
       }
     };
-    request.onprogress = function(){
-      var sumTime = (new Date().getTime() - startTime) / 1000;
-      var speed = ((((junkLength * 8 /* byte (not bit) */) / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
-      setText("up", speed + " Mbps (" + sumTime + " s)");
-    }
     try {
       startTime = new Date().getTime();
       request.send(junk);
