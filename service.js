@@ -1,5 +1,6 @@
-const serverEUrl = "https://localhost/speedtest/";
-const serverGUrl = "https://localhost/speedtest/blank.file";
+const serverPUrl = "https://localhost/speedtest/";
+const serverDUrl = "https://localhost/speedtest/blank.file";
+const serverUUrl = "https://localhost/speedtest/empty.file";
 const connectionTogether = 5;
 
 let status = "";
@@ -62,7 +63,7 @@ async function ping() {
     return new Promise(resolve => {
         var startTime = 0;
         var request = new XMLHttpRequest();
-        request.open("HEAD", serverEUrl + "?_=" + Math.random(), true);
+        request.open("HEAD", serverPUrl + "?_=" + Math.random(), true);
         request.onreadystatechange = function() {
             if (request.readyState === 4) {
                 var endTime = new Date().getTime();
@@ -90,7 +91,7 @@ async function download(multiConnection) {
                     requests[i] = new XMLHttpRequest();
                     requestsHelper[i] = [];
                     requestsHelper[i].done = false;
-                    requests[i].open("GET", serverGUrl + "?_=" + Math.random(), true);
+                    requests[i].open("GET", serverDUrl + "?_=" + Math.random(), true);
                     requests[i].onreadystatechange = function() {
                         if (requests[i].readyState === 4 && requests[i].status === 200) {
                             var endTime = new Date().getTime();
@@ -170,7 +171,7 @@ async function upload(multiConnection) {
             data: junkData(junkLength)
         });
         var request = new XMLHttpRequest();
-        request.open("POST", serverEUrl + "?_=" + Math.random(), true);
+        request.open("POST", serverUUrl + "?_=" + Math.random(), true);
         request.setRequestHeader("Content-Type", "application/octet-stream");
         request.onreadystatechange = function() {
             if (request.readyState === 4 && request.status === 200) {
@@ -180,6 +181,15 @@ async function upload(multiConnection) {
                 resolve(speed + " Mbps (" + sumTime + " s)");
             }
         };
+        request.upload.addEventListener("progress", function(event) {
+            if (event.lengthComputable) {
+                var endTime = new Date().getTime();
+                var sumTime = (endTime - startTime) / 1000;
+                var speed = ((((event.loaded * 8 /* byte (not bit) */ ) / sumTime) / 1024 /* Kbps */ ) / 1024 /* Mbps */ ).toFixed(2);
+                setText("up", speed + " Mbps (" + sumTime + " s)");
+            }
+        }, false);
+        
         try {
             startTime = new Date().getTime();
             request.send(junk);
