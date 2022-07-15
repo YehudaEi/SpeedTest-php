@@ -79,81 +79,89 @@ async function ping() {
     });
 }
 
+async function sleep(ms) { 
+    return new Promise(resolve => setTimeout(resolve, ms)); 
+}
+
 async function download(multiConnection) {
-    return new Promise(resolve => {
-        var totalStartTime = 0;
-        requests = [];
-        requestsHelper = [];
-        function temp(i){
-            setTimeout(
-    			function() {
-                    var startTime = 0;
-                    requests[i] = new XMLHttpRequest();
-                    requestsHelper[i] = [];
-                    requestsHelper[i].done = false;
-                    requests[i].open("GET", serverDUrl + "?_=" + Math.random(), true);
-                    requests[i].onreadystatechange = function() {
-                        if (requests[i].readyState === 4 && requests[i].status === 200) {
-                            var endTime = new Date().getTime();
-                            var reqLength = requests[i].responseText.length * 8;
-                            var sumTime = (endTime - startTime) / 1000;
-                            var speed = (((reqLength / sumTime) / 1024 /* Kbps */ ) / 1024 /* Mbps */ ).toFixed(2);
-                            
-                            requestsHelper[i].speed = speed;
-                            requestsHelper[i].sumTime = sumTime;
-                            requestsHelper[i].done = true;
-                            alert("request " + i + " done.");
-                        }
-                    };
-                    requests[i].onprogress = function() {
-                        if (status == "stop") {
-                            requests[i].abort();
-                        }
+    // return new Promise(resolve => {
+        var startTime = 0;
+        var requests = {"status":[], "speed":[], "requests":[]};
+        
+        for(var i = 0; i < multiConnection; i++){
+            var tmpReq = new XMLHttpRequest();
+            tmpReq.open("GET", serverDUrl + "?_=" + Math.random(), true);
+            tmpReq.onreadystatechange = function() {
+                if(status == "stop"){
+                    tmpReq.abort();
+                    requests['status'][i] = "stoped";
+                }
+                if (tmpReq.readyState === 4) {
+                    if(tmpReq.status !== 200) console.log(tmpReq.status);
+                    var endTime = new Date().getTime();
+                    var reqLength = tmpReq.responseText.length * 8;
+                    var sumTime = (endTime - startTime) / 1000;
+                    var speed = (((reqLength / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
+                    
+                    requests['status'][i] = "done";
+                    requests['speed'][i] = speed;
+                }
+            };
+            tmpReq.onprogress = function() {
+                if(status == "stop"){
+                    tmpReq.abort();
+                    requests['status'][i] = "stoped";
+                }
+                
+                var endTime = new Date().getTime();
+                var reqLength = tmpReq.responseText.length * 8;
+                var sumTime = (endTime - startTime) / 1000;
+                var speed = (((reqLength / sumTime) / 1024 /* Kbps */) / 1024 /* Mbps */).toFixed(2);
+                
+                requests['status'][i] = "progress";
+                requests['speed'][i] = speed;
+            };
             
-                        var endTime = new Date().getTime();
-                        var reqLength = requests[i].responseText.length * 8;
-                        var sumTime = (endTime - startTime) / 1000;
-                        var speed = (((reqLength / sumTime) / 1024 /* Kbps */ ) / 1024 /* Mbps */ ).toFixed(2);
-                        
-                        requestsHelper[i].speed = speed;
-                        requestsHelper[i].sumTime = sumTime;
-                    };
-                    try {
-                        startTime = new Date().getTime();
-                        requests[i].send(null);
-                    } catch (exception) {
-                        alert("Your internet connection is unavelible...");
-                    }
-    			},
-    		1);
+            requests['status'][i] = "start";
+            requests['speed'][i] = "0";
+            requests['requests'][i] = tmpReq;
         }
         
-        totalStartTime = new Date().getTime();
-        for (var i = 0; i < multiConnection; i++) {
-    		temp(i);
-    	}
-    	
+        startTime = new Date().getTime();
+        for(var i = 0; i < multiConnection; i++){
+            try {
+                requests['requests'][i].send(null);
+            }
+            catch(exception) {
+              alert("Your internet connection is unavelible...");
+            }
+        }
+        
     	while(true){
+    	    await sleep(100);
+
     	    done = true;
         	var tmpTotalSpeed = 0;
-    	    requestsHelper.forEach(function (request){
-    	        if(done && !request.done) done = false;
-    	        tmpTotalSpeed += request.speed
-    	    });
+    	    for(var i = 0; i < multiConnection; i++){
+    	        if(done && requests['status'][i] != "done")
+    	            done = false;
+
+    	        tmpTotalSpeed += requests['speed'][i];
+    	    }
     	    
 	        var totalEndTime = new Date().getTime();
     	    var totalSpeed = tmpTotalSpeed / multiConnection;
-    	    var totalSumTime = (totalEndTime - totalStartTime) / 1000;
+    	    var totalSumTime = (totalEndTime - startTime) / 1000;
     	    
     	    if(done){
-    	        resolve(totalSpeed + " Mbps (" + totalSumTime + " s)");
-    	        return;
+    	        return /*resolve*/(totalSpeed + " Mbps (" + totalSumTime + " s)");
+    	       // return;
     	    }
     	    else{
     	        setText("down", totalSpeed + " Mbps (" + totalSumTime + " s)");
     	    }
     	}
-    });
+    //});
 }
 
 function junkData(length) {
