@@ -1,5 +1,5 @@
 # SpeedTest-php
-a speedtest php site 
+A Speedtest PHP website 
 
 ## [Website](https://speedtest.yehudae.net)
 

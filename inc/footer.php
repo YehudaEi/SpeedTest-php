@@ -1,12 +1,8 @@
-
+<?php require_once __DIR__ . '/../config.php'; ?>
 <footer>
-	<div class="footer">
-		<a href="./">Home | דף הבית</a>	
-		<a href="contact.php">Contact | צור קשר</a>
-	</div>
-
-	<div class="footer">
-		<p><?php echo "$copyrights" ;?></p>
-	</div>
-
-</footer>	
+  <span><?php echo htmlspecialchars($copyrights); ?></span>
+  <span class="sep">·</span>
+  <a href="mailto:<?= SITE_EMAIL ?>"><?= SITE_EMAIL ?></a>
+  <span class="sep">·</span>
+  <a href="https://github.com/YehudaEi/SpeedTest-php" target="_blank" rel="noopener">קוד פתוח ב-GitHub</a>
+</footer>

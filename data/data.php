@@ -1,41 +1,82 @@
 <?php
-include_once('settings.php');
-require 'idObfuscation.php';
+/**
+ * data.php — Telemetry endpoint.
+ * Receives POST from the speed-test worker, saves to DB, returns obfuscated ID.
+ * Built-in IP-based rate limiting (see RATE_WINDOW / RATE_MAX_HITS in config.php).
+ */
 
-$ip = ($_SERVER['REMOTE_ADDR'] ?? "");
-$ispinfo = ($_POST["ispinfo"] ?? "");
-$extra = ($_POST["extra"] ?? "");
-$ua = ($_SERVER['HTTP_USER_AGENT'] ?? "");
-$lang=""; if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) $lang = ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? "");
-$dl = ($_POST["dl"] ?? "");
-$ul = ($_POST["ul"] ?? "");
-$ping = ($_POST["ping"] ?? "");
-$jitter = ($_POST["jitter"] ?? "");
-$log = ($_POST["log"] ?? "");
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/idObfuscation.php';
 
-if($db_type=="sqlite"){
-    $conn = new PDO("sqlite:$Sqlite_db_file") or die("1");
-    $conn->exec("
-        CREATE TABLE IF NOT EXISTS `speedtest_users` (
-        `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		`ispinfo`    text,
-		`extra`    text,
-        `timestamp`     timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        `ip`    text NOT NULL,
-        `ua`    text NOT NULL,
-        `lang`  text NOT NULL,
-        `dl`    text,
-        `ul`    text,
-        `ping`  text,
-        `jitter`        text,
-        `log`   longtext
-        );
-    ");
-    $stmt = $conn->prepare("INSERT INTO speedtest_users (ip,ispinfo,extra,ua,lang,dl,ul,ping,jitter,log) VALUES (?,?,?,?,?,?,?,?,?,?)") or die("2");
-    $stmt->execute(array($ip,$ispinfo,$extra,$ua,$lang,$dl,$ul,$ping,$jitter,$log)) or die("3");
-	$id=$conn->lastInsertId();
-	echo "id ".($enable_id_obfuscation?obfuscateId($id):$id);
-    $conn = null;
+// ── Collect POST data ─────────────────────────────────────────────────────────
+$ip      = $_SERVER['REMOTE_ADDR']          ?? '';
+$ispinfo = $_POST['ispinfo'] ?? '';
+$extra   = $_POST['extra']   ?? '';
+$dl      = $_POST['dl']      ?? '';
+$ul      = $_POST['ul']      ?? '';
+$ping    = $_POST['ping']    ?? '';
+$jitter  = $_POST['jitter']  ?? '';
+$log     = $_POST['log']     ?? '';
+$ua      = $_SERVER['HTTP_USER_AGENT']      ?? '';
+$lang    = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+
+if ($db_type !== 'sqlite') { die('-1'); }
+
+$db = new PDO("sqlite:{$sqlite_db_file}");
+$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+// ── Rate-limit table ──────────────────────────────────────────────────────────
+$db->exec("
+    CREATE TABLE IF NOT EXISTS rate_limit (
+        ip     TEXT    NOT NULL,
+        window INTEGER NOT NULL,
+        hits   INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (ip, window)
+    )
+");
+
+$windowKey = (int)(floor(time() / RATE_WINDOW) * RATE_WINDOW);
+$safeIp    = SQLite3::escapeString($ip);
+
+$db->exec("
+    INSERT INTO rate_limit (ip, window, hits) VALUES ('$safeIp', $windowKey, 1)
+    ON CONFLICT(ip, window) DO UPDATE SET hits = hits + 1
+");
+
+$hits = (int)$db->query(
+    "SELECT hits FROM rate_limit WHERE ip='$safeIp' AND window=$windowKey"
+)->fetchColumn();
+
+if ($hits > RATE_MAX_HITS) {
+    http_response_code(429);
+    echo 'rate_limited';
+    exit;
 }
-else die("-1");
-?>
+
+// ── Results table ─────────────────────────────────────────────────────────────
+$db->exec("
+    CREATE TABLE IF NOT EXISTS speedtest_results (
+        id        INTEGER  PRIMARY KEY AUTOINCREMENT,
+        timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        ip        TEXT     NOT NULL,
+        ispinfo   TEXT,
+        ua        TEXT     NOT NULL,
+        lang      TEXT     NOT NULL,
+        dl        TEXT, ul TEXT, ping TEXT, jitter TEXT, log TEXT, extra TEXT
+    )
+");
+
+// ── Insert ────────────────────────────────────────────────────────────────────
+$stmt = $db->prepare("
+    INSERT INTO speedtest_results (ip,ispinfo,extra,ua,lang,dl,ul,ping,jitter,log)
+    VALUES (:ip,:ispinfo,:extra,:ua,:lang,:dl,:ul,:ping,:jitter,:log)
+");
+$stmt->execute([
+    ':ip'=>$ip,':ispinfo'=>$ispinfo,':extra'=>$extra,
+    ':ua'=>$ua,':lang'=>$lang,
+    ':dl'=>$dl,':ul'=>$ul,':ping'=>$ping,':jitter'=>$jitter,':log'=>$log,
+]);
+
+$id = (int)$db->lastInsertId();
+echo 'id ' . ($enable_id_obfuscation ? obfuscateId($id) : $id);
+$db = null;

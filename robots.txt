@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /data/
+
+Sitemap: https://speedtest.yehudae.net/sitemap.xml

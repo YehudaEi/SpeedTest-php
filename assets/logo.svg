@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0d1f35"/>
+      <stop offset="100%" stop-color="#071018"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="0%" y1="0%" x2="60%" y2="100%">
+      <stop offset="0%"   stop-color="#00d4ff"/>
+      <stop offset="100%" stop-color="#0099cc"/>
+    </linearGradient>
+    <linearGradient id="arc1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#00d4ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#00d4ff" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="120" height="120" rx="24" fill="url(#bg)"/>
+
+  <!-- Speed arc rings (decorative) -->
+  <path d="M 22 78 A 42 42 0 0 1 98 78" fill="none" stroke="#00d4ff" stroke-width="3.5"
+        stroke-linecap="round" opacity="0.15"/>
+  <path d="M 28 78 A 36 36 0 0 1 92 78" fill="none" stroke="#00d4ff" stroke-width="2.5"
+        stroke-linecap="round" opacity="0.25"/>
+  <path d="M 34 78 A 30 30 0 0 1 86 78" fill="none" stroke="#00d4ff" stroke-width="2"
+        stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Active arc (filled ~70%) -->
+  <path d="M 22 78 A 42 42 0 0 1 86.5 52" fill="none" stroke="url(#arc1)"
+        stroke-width="3.5" stroke-linecap="round" filter="url(#glow)"/>
+
+  <!-- Lightning bolt -->
+  <polygon points="65,20 47,60 60,60 55,100 78,52 64,52"
+           fill="url(#bolt)" filter="url(#glow)"/>
+
+  <!-- Tip dot on arc -->
+  <circle cx="86.5" cy="52" r="4.5" fill="#00d4ff" opacity="0.9" filter="url(#glow)"/>
+</svg>
