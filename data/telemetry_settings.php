@@ -2,10 +2,10 @@
 
 $db_type = "sqlite";
 
-$stats_password = "default";
+$stats_password = "PASSWORD";
 
-$enable_id_obfuscation = false;
+$enable_id_obfuscation = true;
 
-$Sqlite_db_file = "../../data.sql";
+$Sqlite_db_file = "./data.sql";
 
 ?>

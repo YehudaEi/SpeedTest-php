@@ -90,25 +90,14 @@ if (isset($_GET["isp"])) {
 		}
         if (isset($_GET["distance"])) {
             if ($clientLoc) {
-				$locFile="getIP_serverLocation.php";
 				$serverLoc=null;
-				if(file_exists($locFile)){
-					require $locFile;
-				}else{
-					$json = file_get_contents("https://ipinfo.io/json".getIpInfoTokenString());
-					$details = json_decode($json, true);
-					if (array_key_exists("loc", $details)){
-						$serverLoc = $details["loc"];
-					}
-					if($serverLoc){
-						$lf=fopen($locFile,"w");
-						fwrite($lf,chr(60)."?php\n");
-						fwrite($lf,'$serverLoc="'.addslashes($serverLoc).'";');
-						fwrite($lf,"\n");
-						fwrite($lf,"?".chr(62));
-						fclose($lf);
-					}
+
+				$json = file_get_contents("https://ipinfo.io/json".getIpInfoTokenString());
+				$details = json_decode($json, true);
+				if (array_key_exists("loc", $details)){
+					$serverLoc = $details["loc"];
 				}
+					
                 if ($serverLoc) {
                     try {
                         $clientLoc = explode(",", $clientLoc);

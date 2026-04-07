@@ -1,12 +1,12 @@
 <?php
-include_once('settings.php');
+include_once('telemetry_settings.php');
 require 'idObfuscation.php';
 
 $ip = ($_SERVER['REMOTE_ADDR'] ?? "");
 $ispinfo = ($_POST["ispinfo"] ?? "");
 $extra = ($_POST["extra"] ?? "");
 $ua = ($_SERVER['HTTP_USER_AGENT'] ?? "");
-$lang=""; if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) $lang = ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? "");
+$lang = ""; if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) $lang = ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? "");
 $dl = ($_POST["dl"] ?? "");
 $ul = ($_POST["ul"] ?? "");
 $ping = ($_POST["ping"] ?? "");
@@ -34,7 +34,7 @@ if($db_type=="sqlite"){
     $stmt = $conn->prepare("INSERT INTO speedtest_users (ip,ispinfo,extra,ua,lang,dl,ul,ping,jitter,log) VALUES (?,?,?,?,?,?,?,?,?,?)") or die("2");
     $stmt->execute(array($ip,$ispinfo,$extra,$ua,$lang,$dl,$ul,$ping,$jitter,$log)) or die("3");
 	$id=$conn->lastInsertId();
-	echo "id ".($enable_id_obfuscation?obfuscateId($id):$id);
+	echo "id " . ($enable_id_obfuscation ? obfuscateId($id) : $id);
     $conn = null;
 }
 else die("-1");

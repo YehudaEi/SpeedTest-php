@@ -56,11 +56,11 @@ header("Pragma: no-cache");
 <body>
 <h1>HTML5 Speedtest - Stats</h1>
 <?php
-include_once("settings.php");
+include_once("telemetry_settings.php");
 require "idObfuscation.php";
-if($stats_password == "default"){
+if($stats_password == "PASSWORD"){
 	?>
-		change password in settings.php
+		Access denied
 	<?php
 }else if($_SESSION["logged"]===true){
 	if($_GET["op"]=="logout"){
@@ -93,21 +93,32 @@ if($stats_password == "default"){
 		if($_GET["op"]=="id"&&!empty($_GET["id"])){
 			$id=$_GET["id"];
 			if($enable_id_obfuscation) $id=deobfuscateId($id);
-			if($db_type=="sqlite"){
+			if($db_type=="mysql"){
+				$q=$conn->prepare("select id,timestamp,ip,ispinfo,ua,lang,dl,ul,ping,jitter,log,extra from speedtest_users where id=?");
+				$q->bind_param("i",$id);
+				$q->execute();
+				$q->store_result();
+				$q->bind_result($id,$timestamp,$ip,$ispinfo,$ua,$lang,$dl,$ul,$ping,$jitter,$log,$extra);
+			} else if($db_type=="sqlite"||$db_type=="postgresql"){
 				$q=$conn->prepare("select id,timestamp,ip,ispinfo,ua,lang,dl,ul,ping,jitter,log,extra from speedtest_users where id=?");
 				$q->execute(array($id));
-			} 
-			else die();
+			} else die();
 		}else{
-			if($db_type=="sqlite"){
+			if($db_type=="mysql"){
 				$q=$conn->prepare("select id,timestamp,ip,ispinfo,ua,lang,dl,ul,ping,jitter,log,extra from speedtest_users order by timestamp desc limit 0,100");
 				$q->execute();
-			}
-			else die();
+				$q->store_result();
+				$q->bind_result($id,$timestamp,$ip,$ispinfo,$ua,$lang,$dl,$ul,$ping,$jitter,$log,$extra);
+			} else if($db_type=="sqlite"||$db_type=="postgresql"){
+				$q=$conn->prepare("select id,timestamp,ip,ispinfo,ua,lang,dl,ul,ping,jitter,log,extra from speedtest_users order by timestamp desc limit 0,100");
+				$q->execute();
+			}else die();
 		}
 		while(true){
 			$id=null; $timestamp=null; $ip=null; $ispinfo=null; $ua=null; $lang=null; $dl=null; $ul=null; $ping=null; $jitter=null; $log=null; $extra=null;
-			if($db_type=="sqlite"){
+			if($db_type=="mysql"){
+				if(!$q->fetch()) break;
+			} else if($db_type=="sqlite"||$db_type=="postgresql"){
 				if(!($row=$q->fetch())) break;
 				$id=$row["id"];
 				$timestamp=$row["timestamp"];
@@ -120,6 +131,7 @@ if($stats_password == "default"){
 				$ping=$row["ping"];
 				$jitter=$row["jitter"];
 				$log=$row["log"];
+				$extra=$row["extra"];
 			}else die();
 	?>
 		<table>
@@ -132,6 +144,7 @@ if($stats_password == "default"){
 			<tr><th>Ping</th><td><?=htmlspecialchars($ping, ENT_HTML5, 'UTF-8') ?></td></tr>
 			<tr><th>Jitter</th><td><?=htmlspecialchars($jitter, ENT_HTML5, 'UTF-8') ?></td></tr>
 			<tr><th>Log</th><td><?=htmlspecialchars($log, ENT_HTML5, 'UTF-8') ?></td></tr>
+			<tr><th>Extra info</th><td><?=htmlspecialchars($extra, ENT_HTML5, 'UTF-8') ?></td></tr>
 		</table>
 	<?php
 		}

@@ -1,4 +1,5 @@
 <script type="text/javascript">
+	console.log("%c‎E‎v‎e‎r‎y‎t‎h‎i‎n‎g‎ ‎i‎s‎ ‎p‎r‎otected‎,‎ ‎y‎o‎u‎ ‎w‎i‎l‎l‎ f‎i‎n‎d‎ ‎n‎o‎t‎h‎i‎n‎g‎ ‎h‎e‎r‎e‎ ‎😁‎", "color:red;font-size:30px;font-weight:bold;");
 	function I(id){return document.getElementById(id);}
 	var meterBk="#E0E0E0";
 	var dlColor="#0085c9",
@@ -42,12 +43,14 @@
 	var data=null; 
 	function startStop(){
 		if(w!=null){
+			_paq.push(["trackEvent","user","stopSpeedTest"]);
 			w.postMessage('abort');
 			w=null;
 			data=null;
 			I("startStopBtn").className="";
 			initUI();
 		}else{
+			_paq.push(["trackEvent","user","startSpeedTest"]);
 			w=new Worker('netspeed/speedtest_worker.min.js');
 			w.postMessage('start'); 
 			I("startStopBtn").className="running";
@@ -67,6 +70,7 @@
 		var status=data.testState;
 		I("ip").textContent=data.clientIp;
 		I("ipArea").style.display="block";
+		if(status==4){I("shareButton").href = "/data/share.php?id=" + data.testId;I("shareButton").style.display="block";}
 		I("dlText").textContent=(status==1&&data.dlStatus==0)?"...":data.dlStatus;
 		drawMeter(I("dlMeter"),mbpsToAmount(Number(data.dlStatus*(status==1?oscillate():1))),meterBk,dlColor,Number(data.dlProgress),progColor);
 		I("ulText").textContent=(status==3&&data.ulStatus==0)?"...":data.ulStatus;
